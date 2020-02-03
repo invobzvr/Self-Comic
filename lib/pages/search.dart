@@ -51,18 +51,20 @@ class _SearchPageState extends State<SearchPage> {
       appBar: AppBar(title: Text(word)),
       body: ready
           ? result.length > 0
-              ? Column(
-                  children: result
-                      .map((ci) => ListTile(
-                            title: Text(ci.name),
-                            subtitle: Text(ci.author),
-                            leading: Image.network(ci.cover),
-                            onTap: () {
-                              // Navigator.of(context).pop();
-                              Navigator.pushNamed(context, 'DetailPage', arguments: ci);
-                            },
-                          ))
-                      .toList(),
+              ? ListView.builder(
+                  itemCount: result.length,
+                  itemBuilder: (context, index) {
+                    ComicItem ci = result[index];
+                    return ListTile(
+                      title: Text(ci.name),
+                      subtitle: Text(ci.author),
+                      leading: Image.network(ci.cover),
+                      onTap: () {
+                        // Navigator.of(context).pop();
+                        Navigator.pushNamed(context, 'DetailPage', arguments: ci);
+                      },
+                    );
+                  },
                 )
               : Center(child: Text('No result .'))
           : Center(child: CircularProgressIndicator()),

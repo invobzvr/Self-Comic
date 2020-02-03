@@ -43,18 +43,20 @@ class _DetailPageState extends State<DetailPage> {
                     children: [
                       Padding(
                         padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
-                        child: Image.network(ci.cover, width: 200),
+                        child: Image.network(ci.cover, width: MediaQuery.of(context).size.width * 0.3),
                       ),
                       Flexible(
                         child: Text(
                           result.desc.trim(),
                           style: TextStyle(color: Colors.white, fontSize: 18),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 5,
                         ),
                       )
                     ],
                   ),
                 ),
-                preferredSize: Size(150, 300),
+                preferredSize: Size(150, MediaQuery.of(context).size.height * 0.26),
               )
             : null,
       ),
