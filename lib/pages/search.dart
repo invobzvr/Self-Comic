@@ -41,12 +41,13 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     final String word = ModalRoute.of(context).settings.arguments;
-    searchReq(word).then((onValue) {
-      result = onValue;
-      setState(() {
-        ready = true;
+    if (!ready)
+      searchReq(word).then((onValue) {
+        result = onValue;
+        setState(() {
+          ready = true;
+        });
       });
-    });
     return Scaffold(
       appBar: AppBar(title: Text(word)),
       body: ready

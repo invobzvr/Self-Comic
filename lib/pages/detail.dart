@@ -10,18 +10,19 @@ class DetailPage extends StatefulWidget {
 class _DetailPageState extends State<DetailPage> {
   bool ready = false;
   ComicInfo result;
-  List<Tree> treeData;
+  // List<Tree> treeData;
 
   @override
   Widget build(BuildContext context) {
     final ComicItem ci = ModalRoute.of(context).settings.arguments;
-    detailReq(ci.url).then((onValue) {
-      result = onValue;
-      // treeData = arrange(result.cptLst);
-      setState(() {
-        ready = true;
+    if (!ready)
+      detailReq(ci.url).then((onValue) {
+        result = onValue;
+        // treeData = arrange(result.cptLst);
+        setState(() {
+          ready = true;
+        });
       });
-    });
     return Scaffold(
       appBar: AppBar(
         title: Text(ci.name),
@@ -100,26 +101,26 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
-  List<Tree> arrange(List<ChapterItem> cptLst) {
-    List<Tree> treeData = [];
-    Tree tree;
-    for (int i = 0; i < cptLst.length; i++) {
-      if ((i % 50 == 0 && i > 0) || i == cptLst.length - 1) {
-        treeData.add(tree);
-      }
-      if (i % 50 == 0) {
-        tree = Tree('${i + 1} - ${i + 50}');
-      }
-      tree.lst.add(cptLst[i]);
-    }
-    return treeData;
-  }
+  // List<Tree> arrange(List<ChapterItem> cptLst) {
+  //   List<Tree> treeData = [];
+  //   Tree tree;
+  //   for (int i = 0; i < cptLst.length; i++) {
+  //     if ((i % 50 == 0 && i > 0) || i == cptLst.length - 1) {
+  //       treeData.add(tree);
+  //     }
+  //     if (i % 50 == 0) {
+  //       tree = Tree('${i + 1} - ${i + 50}');
+  //     }
+  //     tree.lst.add(cptLst[i]);
+  //   }
+  //   return treeData;
+  // }
 }
 
-class Tree {
-  Tree(this.ttl);
+// class Tree {
+//   Tree(this.ttl);
 
-  String ttl;
-  List<ChapterItem> lst = [];
-  bool isExpanded = false;
-}
+//   String ttl;
+//   List<ChapterItem> lst = [];
+//   bool isExpanded = false;
+// }
