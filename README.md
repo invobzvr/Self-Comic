@@ -1,4 +1,4 @@
 # Self Comic
 
-An online comic reader.
+An comic reader.
 Building ...
