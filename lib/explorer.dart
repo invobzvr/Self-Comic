@@ -3,19 +3,15 @@ library explorer;
 import 'dart:io';
 import 'package:flutter/material.dart';
 
-typedef ExplorerResult = void Function(String path);
-
-List<String> listDirs(String path) {
-  List<String> dirs = Directory(path).listSync().where((ii) => ii is Directory).map((ii) => ii.path.split('/').last).toList();
-  dirs.sort();
-  return dirs;
+List<String> listDir(String path) {
+  return Directory(path).listSync().where((ii) => ii is Directory).map((ii) => ii.path.split('/').last).toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 }
 
 class Explorer {
-  static void show(BuildContext context, ExplorerResult callback, [String root]) {
-    Navigator.push(
+  static Future<String> show(BuildContext context, [String root]) {
+    return Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => ExplorerPage(callback, root ?? '/sdcard')),
+      MaterialPageRoute(builder: (context) => ExplorerPage(root ?? '/sdcard')),
     );
   }
 }
@@ -45,30 +41,36 @@ class PBItem extends StatelessWidget {
 
 class ExplorerPage extends StatefulWidget {
   final String root;
-  final ExplorerResult callback;
 
-  ExplorerPage(this.callback, this.root);
+  ExplorerPage(this.root);
 
   @override
-  _ExplorerPageState createState() => _ExplorerPageState(callback, root);
+  _ExplorerPageState createState() => _ExplorerPageState();
 }
 
 class _ExplorerPageState extends State<ExplorerPage> {
-  String root;
   String current;
-  ExplorerResult callback;
+  String last;
   List<String> paths;
+  ScrollController pController = ScrollController();
 
-  _ExplorerPageState(this.callback, this.root) {
-    if (!root.startsWith('/')) {
-      root = '/$root';
-    }
-    current = root;
-    paths = root.split('/');
+  @override
+  void initState() {
+    super.initState();
+    current = widget.root.startsWith('/') ? widget.root : '/${widget.root}';
+    paths = current.split('/');
   }
 
   @override
   Widget build(BuildContext context) {
+    Future.delayed(
+      Duration(seconds: 0),
+      () => pController.animateTo(
+        pController.position.maxScrollExtent,
+        duration: Duration(milliseconds: 100),
+        curve: Curves.easeInOut,
+      ),
+    );
     return Scaffold(
       appBar: AppBar(
         title: Text('Explorer'),
@@ -76,27 +78,49 @@ class _ExplorerPageState extends State<ExplorerPage> {
           preferredSize: Size(0, 39),
           child: Container(
             height: 39,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: paths.length,
-              separatorBuilder: (ctx, idx) => PBItem('>'),
-              itemBuilder: (ctx, idx) => PBItem(
-                paths[idx] != '' ? paths[idx] : '/',
-                () => setState(() {
-                  paths = paths.sublist(0, idx + 1);
-                  current = paths.join('/');
-                }),
-              ),
-            ),
+            child: pbBuilder(),
           ),
         ),
       ),
-      body: Builder(builder: (context) => lvBuilder(context)),
+      body: Builder(builder: (context) => fseBuilder(context)),
     );
   }
 
-  ListView lvBuilder(BuildContext context) {
-    List<String> list = listDirs(current);
+  Widget pbBuilder() {
+    return ListView.separated(
+      controller: pController,
+      scrollDirection: Axis.horizontal,
+      itemCount: paths.length,
+      separatorBuilder: (ctx, idx) => PBItem('>'),
+      itemBuilder: (ctx, idx) => PBItem(
+        paths[idx] != '' ? paths[idx] : '/',
+        () => setState(() {
+          paths = paths.sublist(0, idx + 1);
+          current = paths.join('/');
+        }),
+      ),
+    );
+  }
+
+  Widget fseBuilder(BuildContext context) {
+    List<String> list;
+    try {
+      list = listDir(current);
+      last = current;
+    } on FileSystemException catch (e) {
+      return InkWell(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error, color: Colors.red, size: 100),
+              Text(e.osError.message, style: TextStyle(color: Colors.red, fontSize: 30)),
+            ],
+          ),
+        ),
+        onTap: () => setState(() => (paths = (current = last).split('/'))),
+      );
+    }
     return ListView.separated(
       itemCount: list.length,
       separatorBuilder: (ctx, idx) => Divider(height: 0),
@@ -117,10 +141,7 @@ class _ExplorerPageState extends State<ExplorerPage> {
             content: Text(selected),
             action: SnackBarAction(
               label: 'Select',
-              onPressed: () {
-                callback(selected);
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context, selected),
             ),
           ));
         },
