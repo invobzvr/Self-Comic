@@ -1,12 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:self_comic/explorer.dart';
-import 'package:self_comic/Reader/reader_page.dart';
 
-File getCoverFile(String path) {
-  return loadDir(path).first;
-}
+import 'package:self_comic/util.dart';
+import 'package:self_comic/Reader/reader_page.dart';
 
 class ShelfPage extends StatefulWidget {
   @override
@@ -56,24 +53,60 @@ class _ShelfPageState extends State<ShelfPage> {
         },
       ),
       body: ready
-          ? ListView.separated(
+          ? GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: 0.7),
               itemCount: comics.length,
-              separatorBuilder: (ctx, idx) => Divider(),
               itemBuilder: (ctx, idx) {
-                String path = comics.elementAt(idx);
-                return Dismissible(
-                  key: Key(path),
-                  direction: DismissDirection.endToStart,
-                  child: ListTile(
-                    leading: Image.file(getCoverFile(path), width: 100),
-                    title: Text(path.split('/').last),
-                    onTap: () => toRead(path),
+                String path = comics[idx];
+                return Card(
+                  elevation: 5,
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  child: Ink.image(
+                    image: FileImage(getCoverFile(path)),
+                    child: InkWell(
+                      highlightColor: Color(0x220099ff),
+                      splashColor: Color(0x550099ff),
+                      onTap: () => toRead(path),
+                      onLongPress: () {
+                        bool ilf = prefs.getBool('ilf') ?? false;
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text('Delete ?'),
+                            content: StatefulBuilder(
+                              builder: (ctx, setState) => CheckboxListTile(
+                                title: Text('include local files'),
+                                value: ilf,
+                                onChanged: (val) => setState(() => ilf = val),
+                              ),
+                            ),
+                            actions: [
+                              FlatButton(
+                                child: Text('Cancel'),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                              FlatButton(
+                                child: Text('Confirm'),
+                                onPressed: () {
+                                  setState(() {
+                                    prefs.setBool('ilf', ilf);
+                                    Navigator.pop(context);
+                                    deleteLocal(path).then((onValue) {
+                                      comics = comics
+                                        ..remove(path)
+                                        ..where((ii) => ii != null).toList();
+                                      prefs.setStringList('comics', comics);
+                                    });
+                                  });
+                                },
+                              )
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                  onDismissed: (direction) => setState(() {
-                    comics = comics
-                      ..remove(path)
-                      ..where((ii) => ii != null).toList();
-                  }),
                 );
               },
             )
