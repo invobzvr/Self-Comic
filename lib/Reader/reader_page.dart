@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import 'package:self_comic/util.dart';
+import 'package:explorer/explorer.dart';
 
 class ReaderPage extends StatefulWidget {
   final String path;
@@ -16,12 +15,15 @@ class _ReaderPageState extends State<ReaderPage> {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     PageController pageController = PageController();
-    var files = loadDir(widget.path);
+    var files = Explorer.list(widget.path);
     return GestureDetector(
       child: PageView.builder(
         controller: pageController,
         itemCount: files.length,
-        itemBuilder: (ctx, idx) => Image.file(files[idx]),
+        itemBuilder: (ctx, idx) {
+          if (idx < files.length - 1) precacheImage(FileImage(files[idx + 1]), context);
+          return Image.file(files[idx]);
+        },
       ),
       onTapUp: (dtl) {
         if (dtl.localPosition.dx < width / 5) {
